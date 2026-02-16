@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sukebei Cover Helper Settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Sukebei Cover Helper</h1>
+      <p>Configure your DMM Affiliate credentials.</p>
+
+      <label for="apiId">API ID</label>
+      <input id="apiId" type="text" placeholder="Your DMM API ID" />
+
+      <label for="affiliateId">Affiliate ID</label>
+      <input id="affiliateId" type="text" placeholder="Your affiliate ID" />
+
+      <div class="actions">
+        <button id="saveBtn" type="button">Save</button>
+      </div>
+
+      <p id="status" class="status" aria-live="polite"></p>
+    </main>
+
+    <script src="options.js"></script>
+  </body>
+</html>

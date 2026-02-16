@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Sukebei Cover Helper",
+  "description": "Show AV cover images for Sukebei torrent rows by code lookup.",
+  "version": "0.1.0",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://sukebei.nyaa.si/*",
+    "https://api.dmm.com/*",
+    "https://pics.dmm.co.jp/*",
+    "https://javdb.com/*",
+    "https://www.javdb.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://sukebei.nyaa.si/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_page": "options.html",
+  "action": {
+    "default_title": "Sukebei Cover Helper"
+  }
+}
