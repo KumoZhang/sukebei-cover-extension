@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Sukebei Cover Helper",
+  "name": "sukebei-cover-extension",
   "description": "Show AV cover images for Sukebei torrent rows by code lookup.",
   "version": "0.1.0",
   "permissions": ["storage"],
@@ -24,6 +24,6 @@
   ],
   "options_page": "options.html",
   "action": {
-    "default_title": "Sukebei Cover Helper"
+    "default_title": "sukebei-cover-extension"
   }
 }

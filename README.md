@@ -1,6 +1,6 @@
-# Sukebei Cover Helper (MVP)
+# sukebei-cover-extension (MVP)
 
-`Sukebei Cover Helper` is a Chrome extension for quickly previewing AV covers on `sukebei.nyaa.si`. It automatically extracts codes from torrent titles (for example: `IPZZ-750`), loads cover images when you hover on `Name`, supports click-to-zoom full screen preview, and uses local cache to speed up repeated browsing.
+`sukebei-cover-extension` is a Chrome extension for quickly previewing AV covers on `sukebei.nyaa.si`. It automatically extracts codes from torrent titles (for example: `IPZZ-750`), loads cover images when you hover on `Name`, supports click-to-zoom full screen preview, and uses local cache to speed up repeated browsing.
 
 ## Features
 
