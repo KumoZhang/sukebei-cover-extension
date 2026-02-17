@@ -24,7 +24,8 @@ async function fetchCover({ code, title }) {
   const cacheKey = CACHE_PREFIX + normalizedCode;
   const cached = await chrome.storage.local.get(cacheKey);
   const cacheEntry = cached[cacheKey];
-  if (cacheEntry && Date.now() - cacheEntry.timestamp < CACHE_TTL_MS) {
+  const shouldBypassCache = normalizedCode.startsWith("START-");
+  if (cacheEntry && !shouldBypassCache && Date.now() - cacheEntry.timestamp < CACHE_TTL_MS) {
     return cacheEntry.data;
   }
 
@@ -33,15 +34,20 @@ async function fetchCover({ code, title }) {
   const queries = buildQueries(normalizedCode, title);
   let result = null;
   if (javdbItem) {
-    result = {
-      code: normalizedCode,
-      title: javdbItem.title || normalizedCode,
-      coverUrl: javdbItem.coverUrl,
-      itemUrl: javdbItem.itemUrl || "",
-      linkLabel: "Open JavDB",
-      source: "javdb"
-    };
-  } else {
+    const usable = await isUsableCoverUrl(javdbItem.coverUrl);
+    if (usable) {
+      result = {
+        code: normalizedCode,
+        title: javdbItem.title || normalizedCode,
+        coverUrl: javdbItem.coverUrl,
+        itemUrl: javdbItem.itemUrl || "",
+        linkLabel: "Open JavDB",
+        source: "javdb"
+      };
+    }
+  }
+
+  if (!result) {
     const guessedCover = await guessDmmCoverFromCode(normalizedCode);
     if (guessedCover) {
       result = {
@@ -216,8 +222,7 @@ async function guessDmmCoverFromCode(code) {
 
   const prefix = m[1].toLowerCase();
   const rawNum = m[2];
-  const numNoZero = String(Number(rawNum));
-  const candidates = [...new Set([`${prefix}${rawNum}`, `${prefix}${numNoZero}`])];
+  const candidates = buildDmmCidCandidates(prefix, rawNum);
 
   const bases = [
     "https://pics.dmm.co.jp/mono/movie/adult",
@@ -230,7 +235,7 @@ async function guessDmmCoverFromCode(code) {
     for (const base of bases) {
       for (const suffix of suffixes) {
         const url = `${base}/${cid}/${cid}${suffix}`;
-        if (await urlExists(url)) {
+        if ((await urlExists(url)) && !(await isLikelyBlankImage(url))) {
           return url;
         }
       }
@@ -250,6 +255,89 @@ async function urlExists(url) {
   } catch (_err) {
     return false;
   }
+}
+
+function buildDmmCidCandidates(prefix, rawNum) {
+  const numNoZero = String(Number(rawNum));
+  const padded = [rawNum.padStart(3, "0"), rawNum.padStart(4, "0"), rawNum.padStart(5, "0")];
+
+  const prefixes = [prefix];
+  // Some labels (including START) commonly use "1" prefixed CIDs on DMM image CDN.
+  if (!prefix.startsWith("1")) {
+    if (prefix === "start") {
+      prefixes.unshift(`1${prefix}`);
+    } else {
+      prefixes.push(`1${prefix}`);
+    }
+  }
+
+  const nums = [rawNum, numNoZero, ...padded];
+  const out = new Set();
+  for (const p of prefixes) {
+    for (const n of nums) {
+      out.add(`${p}${n}`);
+    }
+  }
+  return [...out];
+}
+
+async function isLikelyBlankImage(url) {
+  try {
+    const res = await fetch(url, { method: "GET" });
+    if (!res.ok) return false;
+    const blob = await res.blob();
+    if (!blob.type.startsWith("image/")) return false;
+    if (typeof createImageBitmap !== "function" || typeof OffscreenCanvas !== "function") {
+      return false;
+    }
+
+    const bmp = await createImageBitmap(blob);
+    const w = Math.min(64, bmp.width);
+    const h = Math.min(64, bmp.height);
+    const canvas = new OffscreenCanvas(w, h);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      bmp.close();
+      return false;
+    }
+
+    ctx.drawImage(bmp, 0, 0, w, h);
+    bmp.close();
+
+    const pixels = ctx.getImageData(0, 0, w, h).data;
+    let sum = 0;
+    let sumSq = 0;
+    let count = 0;
+    for (let i = 0; i < pixels.length; i += 4) {
+      const luma = (pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3;
+      sum += luma;
+      sumSq += luma * luma;
+      count += 1;
+    }
+    if (!count) return false;
+    const mean = sum / count;
+    const variance = sumSq / count - mean * mean;
+    // Near-white and very low variance => likely placeholder/blank image.
+    return mean > 246 && variance < 12;
+  } catch (_err) {
+    return false;
+  }
+}
+
+async function isUsableCoverUrl(url) {
+  if (!url) return false;
+  const lowered = url.toLowerCase();
+  const blockedKeywords = ["noimage", "nowprinting", "now_printing", "placeholder", "default"];
+  if (blockedKeywords.some((k) => lowered.includes(k))) {
+    return false;
+  }
+  if (!(await urlExists(url))) {
+    return false;
+  }
+  if (await isLikelyBlankImage(url)) {
+    return false;
+  }
+  return true;
 }
 
 function buildQueries(code, title) {

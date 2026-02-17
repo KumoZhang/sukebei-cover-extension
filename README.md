@@ -16,7 +16,7 @@
 1. Open Chrome and go to `chrome://extensions`.
 2. Enable `Developer mode`.
 3. Click `Load unpacked` and choose this folder:
-   - `/Users/kumozhang/Codex/chajian/sukebei-cover-extension`
+   - `sukebei-cover-extension`
 4. Open extension details and click `Extension options`.
 5. (Optional) Fill in your `API ID` and `Affiliate ID`, then save.
 
